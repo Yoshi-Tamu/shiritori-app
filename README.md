@@ -9,7 +9,7 @@
 
 ## デプロイURL
 
-https://URL追加予定
+https://shiritori-app-zwmkaa3pgz6q.yoshi-tamu.deno.net/
 
 ---
 
