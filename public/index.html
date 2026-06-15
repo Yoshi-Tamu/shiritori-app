@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>しりとり</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <h1>しりとり</h1>
+
+  <!-- 現在の単語 -->
+  <p id="previousWord"></p>
+
+  <!-- 履歴 -->
+  <ul id="history"></ul>
+
+  <!-- 回数 -->
+  <p id="count">回数: 0</p>
+
+  <!-- 入力 -->
+  <input id="nextWordInput" type="text" />
+  <button id="nextWordSendButton">送信</button>
+
+  <button id="resetButton">リセット</button>
+
+  <script>
+    let count = 0;
+
+    const setGameOver = (isGameOver) => {
+      document.querySelector("#nextWordInput").disabled = isGameOver;
+      document.querySelector("#nextWordSendButton").disabled = isGameOver;
+    };
+
+    window.onload = async () => {
+      const response = await fetch("/shiritori", { method: "GET" });
+      const previousWord = await response.text();
+
+      document.querySelector("#previousWord").innerHTML =
+        `前の単語: ${previousWord}`;
+    };
+
+    // 送信
+    document.querySelector("#nextWordSendButton").onclick = async () => {
+      const nextWordInput = document.querySelector("#nextWordInput");
+      const nextWordInputText = nextWordInput.value;
+
+      const response = await fetch("/shiritori", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nextWord: nextWordInputText })
+      });
+
+      if (response.status !== 200) {
+        const errorObj = JSON.parse(await response.text());
+
+        alert(errorObj.errorMessage);
+
+        if (
+          errorObj.errorCode === "10002" ||
+          errorObj.errorCode === "10003" ||
+          errorObj.errorCode === "10004"
+        ) {
+          setGameOver(true);
+          nextWordInput.value = "";
+        }
+        return;
+      }
+
+      const previousWord = await response.text();
+
+      // 回数更新（修正済み）
+      count++;
+      document.querySelector("#count").textContent = `回数: ${count}`;
+
+      // 履歴追加
+      document.querySelector("#history")
+        .innerHTML += `<li>${previousWord}</li>`;
+
+      // 表示更新
+      document.querySelector("#previousWord").innerHTML =
+        `前の単語: ${previousWord}`;
+
+      nextWordInput.value = "";
+    };
+
+    // リセット
+    document.querySelector("#resetButton").onclick = async () => {
+      const response = await fetch("/reset", { method: "POST" });
+      const previousWord = await response.text();
+
+      document.querySelector("#previousWord").innerHTML =
+        `前の単語: ${previousWord}`;
+
+      document.querySelector("#nextWordInput").value = "";
+
+      //履歴・回数リセット
+      document.querySelector("#history").innerHTML = "";
+      count = 0;
+      document.querySelector("#count").textContent = "回数: 0";
+
+      setGameOver(false);
+    };
+  </script>
+</body>
+
+</html>
